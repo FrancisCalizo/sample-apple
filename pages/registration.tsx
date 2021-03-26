@@ -17,6 +17,9 @@ export default function Registration() {
     },
   });
 
+  const [formState, setFormState] = useState<'idle' | 'submitting'>('idle');
+  const [serverErrors, setServerErrors] = useState([]);
+
   return (
     <div>
       <Head>
@@ -24,10 +27,35 @@ export default function Registration() {
       </Head>
 
       <form
-        onSubmit={handleSubmit((formData) => {
-          console.log(formData, 'formData');
+        onSubmit={handleSubmit(async (formData) => {
+          setFormState('submitting');
+          setServerErrors([]);
+
+          const response = await fetch('/api/auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData),
+          });
+
+          const data = await response.json();
+
+          if (data.errors) {
+            setServerErrors(data.errors);
+          }
+
+          setFormState('idle');
         })}
       >
+        {serverErrors && (
+          <ul>
+            {serverErrors.map((err) => (
+              <li key={err}>{err} </li>
+            ))}
+          </ul>
+        )}
+
         <div>
           <label htmlFor="name">Name</label>
           <input
@@ -76,7 +104,9 @@ export default function Registration() {
         </div>
 
         <div>
-          <button type="submit">Register</button>
+          <button type="submit" disabled={formState === 'submitting'}>
+            Register
+          </button>
         </div>
       </form>
     </div>
